@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>遠方 Drift Away — 公路旅行原型</title>
+<meta name="description" content="遠方 Drift Away — 公路旅行原型與安靜公路駕駛體驗">
+<meta property="og:title" content="遠方 Drift Away — 公路旅行原型">
+<meta property="og:description" content="遠方 Drift Away — 公路旅行原型與安靜公路駕駛體驗">
+<style>
+:root{--ink:#243444;--cream:#fff8eb;--glass:rgba(255,248,235,.88);--line:rgba(36,52,68,.15);--accent:#e58e72}
+*{box-sizing:border-box} body{margin:0;background:#d9e7e6;color:var(--ink);font-family:ui-rounded,"Avenir Next",system-ui,-apple-system,"Noto Sans TC",sans-serif;overflow:hidden}
+#game{position:fixed;inset:0;width:100%;height:100%;display:block}
+.overlay{position:fixed;z-index:2}
+.top{top:18px;left:18px;right:18px;display:flex;justify-content:space-between;align-items:flex-start;gap:12px;pointer-events:none}
+.brand,.status,.panel{background:var(--glass);border:1px solid rgba(255,255,255,.7);box-shadow:0 12px 35px rgba(30,55,70,.12);backdrop-filter:blur(12px);border-radius:18px}
+.brand{padding:12px 16px}.brand strong{display:block;font-size:17px;letter-spacing:.08em}.brand small{font-size:11px;opacity:.68;letter-spacing:.12em}
+.status{padding:10px 14px;font-size:12px;line-height:1.65;text-align:right}
+.panel{padding:14px}.controls{left:18px;bottom:18px;width:min(340px,calc(100vw - 36px));}
+.panel-title{font-size:11px;text-transform:uppercase;letter-spacing:.13em;opacity:.6;margin-bottom:10px}
+.row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+button,select,input{font:inherit}button{border:1px solid var(--line);background:#fffdf7;color:var(--ink);padding:10px 12px;border-radius:12px;cursor:pointer;transition:.18s ease;font-size:12px}
+button:hover{transform:translateY(-1px);background:#fff}button.primary{background:var(--ink);color:white;border-color:var(--ink)}button.active{background:#e9a48c;border-color:#e9a48c;color:#342f38}
+button:focus-visible,input:focus-visible{outline:3px solid #e58e72;outline-offset:2px}
+.small{font-size:11px;opacity:.72;line-height:1.5}
+.music{right:18px;bottom:18px;width:min(290px,calc(100vw - 36px))}
+.music-head{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.track{font-weight:650;font-size:13px}.subtrack{font-size:11px;opacity:.65;margin-top:3px}
+input[type=range]{width:100%;accent-color:#d98770}
+.music-controls{display:flex;align-items:center;gap:8px;margin-top:12px}.music-controls button{flex:1}
+.dash{position:fixed;z-index:1;bottom:-18px;left:50%;transform:translateX(-50%);width:min(720px,80vw);height:104px;border-radius:50% 50% 0 0/35% 35% 0 0;background:linear-gradient(180deg,rgba(48,60,69,.95),rgba(23,34,43,.99));border:2px solid rgba(255,255,255,.25);box-shadow:0 -12px 45px rgba(24,39,51,.18);color:#f5e8d2;display:flex;justify-content:center;align-items:flex-start;padding-top:18px;gap:30px;pointer-events:none}
+.gauge{font-size:11px;text-align:center;opacity:.9}.gauge strong{display:block;font-size:21px;font-weight:500;letter-spacing:.04em}.gauge span{font-size:9px;opacity:.7;letter-spacing:.15em}
+.hint{position:fixed;z-index:2;bottom:112px;left:50%;transform:translateX(-50%);padding:8px 12px;border-radius:999px;background:rgba(255,248,235,.78);font-size:11px;white-space:nowrap;box-shadow:0 4px 18px #29465a12}
+#start{position:fixed;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;padding:20px;background:linear-gradient(180deg,rgba(226,238,233,.1),rgba(37,57,68,.2))}
+.start-card{max-width:470px;width:100%;padding:30px;border-radius:26px;background:rgba(255,249,238,.94);box-shadow:0 30px 80px #203b4a30;text-align:center}
+.start-card h1{font-size:30px;margin:8px 0 4px;letter-spacing:.08em}.start-card p{font-size:13px;line-height:1.8;opacity:.72;margin:10px 0 20px}.eyebrow{font-size:10px;letter-spacing:.2em;opacity:.58}.start-card button{padding:13px 22px;font-size:13px}
+@media(max-width:680px){.top{top:10px;left:10px;right:10px}.brand{padding:9px 11px}.brand strong{font-size:14px}.status{font-size:10px;padding:8px 10px}.controls{left:10px;bottom:10px;width:calc(100vw - 20px);padding:11px}.music{right:10px;bottom:155px;width:calc(100vw - 20px);padding:11px}.dash{width:95vw;height:80px;bottom:-24px}.gauge strong{font-size:17px}.hint{bottom:92px;font-size:10px}.panel-title{margin-bottom:7px}button{padding:9px 10px}}
+</style>
+</head>
+<body>
+<canvas id="game" aria-label="公路旅行場景"></canvas>
+<div class="overlay top">
+  <div class="brand"><strong>遠方 <span style="font-weight:400;opacity:.55">/ DRIFT AWAY</span></strong><small>A LITTLE ROAD, A LOT OF SKY</small></div>
+  <div class="status"><div id="region">海岸公路 · 黃昏</div><div id="weather">微風　☼　晴朗</div></div>
+</div>
+<div class="panel overlay controls">
+  <div class="panel-title">旅程控制 / JOURNEY</div>
+  <div class="row" style="margin-bottom:9px">
+    <button id="driveBtn" class="primary">手動駕駛</button>
+    <button id="cruiseBtn">巡航控制</button>
+    <button id="autoBtn">自動駕駛</button>
+  </div>
+  <div class="row" style="margin-bottom:8px">
+    <button id="coastBtn" class="active">海岸</button>
+    <button id="mountainBtn">山林</button>
+    <button id="desertBtn">曠野</button>
+    <button id="nightBtn">夜色</button>
+  </div>
+  <div class="small" id="modeText">手動模式：使用 ← → 或 A / D 微調方向，↑ / ↓ 控制速度。</div>
+</div>
+<div class="panel overlay music">
+  <div class="panel-title">車載音響 / RADIO</div>
+  <div class="music-head">
+    <div><div class="track" id="trackName">01 — Blue Hour</div><div class="subtrack">原創環境音 · 由瀏覽器即時合成</div></div>
+    <button id="musicBtn" aria-label="播放或暫停音樂">♫ 播放</button>
+  </div>
+  <div class="music-controls"><button id="prevBtn">上一首</button><button id="nextBtn">下一首 ↗</button></div>
+  <div style="display:flex;justify-content:space-between;font-size:10px;opacity:.65;margin-top:12px"><label for="volume">音量</label><span id="volLabel">35%</span></div>
+  <input id="volume" type="range" min="0" max="100" value="35" aria-label="音樂音量">
+</div>
+<div class="dash">
+  <div class="gauge"><strong id="speed">62</strong><span>KM/H</span></div>
+  <div class="gauge"><strong id="gear">D</strong><span>DRIVE MODE</span></div>
+  <div class="gauge"><strong id="distance">08.4</strong><span>KM TRAVELLED</span></div>
+</div>
+<div class="hint" id="hint">找一首喜歡的歌，讓公路帶你往前。</div>
+<div id="start">
+  <div class="start-card">
+    <div class="eyebrow">A QUIET DRIVE, JUST FOR YOU</div>
+    <h1>遠方</h1>
+    <div style="font-size:12px;letter-spacing:.18em;opacity:.55">DRIFT AWAY</div>
+    <p>沒有比賽，也沒有目的地的壓力。<br>只有一段公路、窗外的風景，和屬於你的音樂。<br>坐好，準備出發。</p>
+    <button class="primary" id="startBtn">開始這趟旅程　→</button>
+    <div class="small" style="margin-top:15px">建議使用耳機 · 點擊開始後可啟用音樂</div>
+  </div>
+</div>
+<script>
+(() => {
+const canvas=document.getElementById('game'),ctx=canvas.getContext('2d');
+let W=innerWidth,H=innerHeight,dpr=Math.min(devicePixelRatio||1,2);
+function resize(){W=innerWidth;H=innerHeight;canvas.width=W*dpr;canvas.height=H*dpr;canvas.style.width=W+'px';canvas.style.height=H+'px';ctx.setTransform(dpr,0,0,dpr,0,0)}
+addEventListener('resize',resize);resize();
+let mode='drive',region='coast',night=false,speed=62,distance=8.4,steer=0,roadOffset=0,started=false,last=performance.now();
+const $=id=>document.getElementById(id);
+const palettes={
+ coast:{sky1:'#f6cbb4',sky2:'#f8e7d0',far:'#8caeb0',hill:'#648f91',land:'#a9c6a4',road:'#69777b',edge:'#e9dfcf',accent:'#f4a17f'},
+ mountain:{sky1:'#c9dcd7',sky2:'#e9e9d8',far:'#7e9b9b',hill:'#668c7d',land:'#8eaa87',road:'#626f70',edge:'#e6dfc8',accent:'#d9a178'},
+ desert:{sky1:'#f4c59e',sky2:'#f8e4c4',far:'#c18e7c',hill:'#b87e69',land:'#d7b486',road:'#777373',edge:'#f4e0bd',accent:'#df9b6d'},
+ night:{sky1:'#172d4a',sky2:'#475e7b',far:'#536e7d',hill:'#334f60',land:'#536f6d',road:'#333f4c',edge:'#b8b9bd',accent:'#f0c68c'}
+};
+function lerp(a,b,t){return a+(b-a)*t}
+function poly(points,color){ctx.fillStyle=color;ctx.beginPath();ctx.moveTo(points[0][0],points[0][1]);for(let i=1;i<points.length;i++)ctx.lineTo(points[i][0],points[i][1]);ctx.closePath();ctx.fill()}
+function draw(){
+ const p=palettes[night?'night':region],horizon=H*.43;
+ let sky=ctx.createLinearGradient(0,0,0,horizon);sky.addColorStop(0,p.sky1);sky.addColorStop(1,p.sky2);ctx.fillStyle=sky;ctx.fillRect(0,0,W,H);
+ // soft sun / moon
+ ctx.globalAlpha=night?.7:.8;ctx.fillStyle=night?'#f5e4c2':'#fff0c9';ctx.beginPath();ctx.arc(W*.76,H*.17,night?17:31,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;
+ // distant layers
+ if(region==='coast'&&!night){ctx.fillStyle='#b8d6d0';ctx.fillRect(0,horizon,W,H*.25)}
+ poly([[0,horizon+25],[W*.12,horizon-30],[W*.25,horizon+15],[W*.38,horizon-65],[W*.52,horizon+18],[W*.72,horizon-38],[W*.88,horizon+5],[W,horizon-20],[W,H*.72],[0,H*.72]],p.far);
+ poly([[0,horizon+65],[W*.16,horizon+20],[W*.3,horizon+74],[W*.45,horizon+10],[W*.63,horizon+70],[W*.81,horizon+25],[W,horizon+62],[W,H*.78],[0,H*.78]],p.hill);
+ // low clouds
+ if(!night){ctx.globalAlpha=.22;ctx.fillStyle='#fffaf0';for(let i=0;i<5;i++){let x=((i*237+roadOffset*.15)%(W+180))-80,y=H*(.11+(i%3)*.055);ctx.beginPath();ctx.ellipse(x,y,45,8,0,0,Math.PI*2);ctx.fill()}ctx.globalAlpha=1}
+ // road perspective curves
+ const center=W*.5+Math.sin(roadOffset*.002)*W*.055+steer*W*.04;
+ const topY=horizon+H*.08,bottomY=H*1.06;
+ const halfTop=W*.025,halfBottom=W*.43;
+ // ground
+ ctx.fillStyle=p.land;ctx.fillRect(0,horizon,W,H-horizon);
+ if(region==='coast'&&!night){
+   // sea on left, pale shoreline
+   poly([[0,horizon+30],[W*.26,horizon+20],[W*.33,H],[0,H]],'#92c9c5');
+   poly([[0,horizon+60],[W*.25,horizon+47],[W*.32,H],[W*.25,H],[0,H]],'#d8d0b4');
+ }
+ // rolling ground highlights
+ for(let i=0;i<9;i++){let y=horizon+((i*57+roadOffset*.28)%(H-horizon));ctx.globalAlpha=.10;ctx.fillStyle=i%2?'#fff4d8':'#334e53';ctx.fillRect(0,y,W,1.5);ctx.globalAlpha=1}
+ // road trapezoid, subtle bend
+ const roadX=(y)=>center+Math.sin((y-topY)/(H*.75)*2.5+roadOffset*.001)*W*.035;
+ const leftTop=roadX(topY)-halfTop,rightTop=roadX(topY)+halfTop,leftBot=roadX(bottomY)-halfBottom,rightBot=roadX(bottomY)+halfBottom;
+ poly([[leftTop,topY],[rightTop,topY],[rightBot,bottomY],[leftBot,bottomY]],p.road);
+ // shoulders
+ const shoulder=W*.014;
+ poly([[leftTop-shoulder,topY],[leftTop,topY],[leftBot,bottomY],[leftBot-shoulder*2,bottomY]],p.edge);
+ poly([[rightTop,topY],[rightTop+shoulder,topY],[rightBot+shoulder*2,bottomY],[rightBot,bottomY]],p.edge);
+ // road dashed lines with perspective
+ for(let i=0;i<18;i++){
+  let z=((i/18+roadOffset*.0009)%1),y=topY+(z*z)*(bottomY-topY);
+  let half=lerp(1,7,z),len=lerp(3,37,z);
+  let x=roadX(y);
+  ctx.fillStyle=night?'#e5d7b5':'#e9dfc8';ctx.globalAlpha=.45+z*.45;
+  ctx.fillRect(x-half,y,half*2,len);ctx.globalAlpha=1;
+ }
+ // trees / posts along sides, approaching viewer
+ for(let i=0;i<22;i++){
+  let z=((i/22+roadOffset*.00065)%1),y=topY+z*z*(bottomY-topY);
+  let scale=.15+z*1.6,xL=roadX(y)-lerp(halfTop,halfBottom,z)-30*scale,xR=roadX(y)+lerp(halfTop,halfBottom,z)+30*scale;
+  if(region==='desert'){
+    drawCactus(xL,y,scale,p);drawCactus(xR,y,scale*.82,p);
+  } else {
+    drawTree(xL,y,scale,p,i);drawTree(xR,y,scale*.88,p,i+3);
+  }
+ }
+ // distant little road sign
+ if(region!=='desert'){let x=W*.78,y=horizon+H*.13;ctx.globalAlpha=.8;ctx.fillStyle='#e9e0c9';ctx.fillRect(x,y,2,30);ctx.fillStyle=region==='mountain'?'#6b9683':'#6c9b9b';ctx.fillRect(x-15,y-14,32,17);ctx.globalAlpha=1}
+ // windshield vignette and hood
+ const vg=ctx.createRadialGradient(W*.5,H*.45,H*.1,W*.5,H*.45,H*.85);vg.addColorStop(.55,'rgba(20,35,45,0)');vg.addColorStop(1,'rgba(25,38,48,.2)');ctx.fillStyle=vg;ctx.fillRect(0,0,W,H);
+ // hood top edge
+ poly([[W*.34,H],[W*.39,H*.89],[W*.61,H*.89],[W*.68,H]],night?'#263844':'#384b53');
+ ctx.globalAlpha=.5;ctx.strokeStyle='#d9cbb4';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(W*.42,H*.93);ctx.lineTo(W*.5,H*.9);ctx.lineTo(W*.58,H*.93);ctx.stroke();ctx.globalAlpha=1;
+ // window frame edges
+ const frame=night?'#1e303b':'#334650';
+ ctx.fillStyle=frame;poly([[0,0],[W*.025,0],[W*.085,H*.56],[0,H*.7]],frame);poly([[W,0],[W*.975,0],[W*.915,H*.56],[W,H*.7]],frame);
+ // subtle rain if night (ambience)
+ if(night){ctx.globalAlpha=.18;ctx.strokeStyle='#dce8ef';for(let i=0;i<70;i++){let x=(i*71+roadOffset*.7)%W,y=(i*127+roadOffset*1.7)%(H*.8);ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x-4,y+13);ctx.stroke()}ctx.globalAlpha=1}
+}
+function drawTree(x,y,s,p,i){
+ if(x<-80||x>W+80)return;const trunkH=13*s,wide=17*s;
+ ctx.fillStyle=night?'#304750':(region==='mountain'?'#607d69':'#7e8870');ctx.fillRect(x-2*s,y-trunkH*.45,4*s,trunkH);
+ const col=night?'#2c4954':(i%2?p.hill:p.far);
+ poly([[x,y-39*s],[x-wide,y-7*s],[x-wide*.48,y-8*s],[x-wide*.8,y+2*s],[x+wide*.8,y+2*s],[x+wide*.48,y-8*s],[x+wide,y-7*s]],col);
+ ctx.globalAlpha=.25;ctx.fillStyle='#f6e5c8';ctx.beginPath();ctx.ellipse(x-wide*.2,y-22*s,4*s,10*s,-.5,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;
+}
+function drawCactus(x,y,s,p){if(x<-50||x>W+50)return;ctx.strokeStyle='#8b8e68';ctx.lineWidth=4*s;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x,y-26*s);ctx.moveTo(x,y-12*s);ctx.lineTo(x-7*s,y-12*s);ctx.lineTo(x-7*s,y-20*s);ctx.moveTo(x,y-17*s);ctx.lineTo(x+8*s,y-17*s);ctx.lineTo(x+8*s,y-24*s);ctx.stroke()}
+function tick(now){const dt=Math.min((now-last)/1000,.05);last=now;
+ if(started){if(mode==='auto')speed=lerp(speed,76,dt*.6);if(mode==='cruise')speed=lerp(speed,68,dt*.8);distance+=speed*dt/3600;roadOffset+=speed*dt*1.8}
+ draw();$('speed').textContent=Math.round(speed);$('distance').textContent=distance.toFixed(1).padStart(4,'0');$('gear').textContent=mode==='auto'?'A':mode==='cruise'?'C':'D';
+ requestAnimationFrame(tick)}
+requestAnimationFrame(tick);
+function setMode(m){mode=m;['driveBtn','cruiseBtn','autoBtn'].forEach((id,i)=>$(id).classList.toggle('active',['drive','cruise','auto'][i]===m));$('modeText').textContent=m==='drive'?'手動模式：使用 ← → 或 A / D 微調方向，↑ / ↓ 控制速度。':m==='cruise'?'巡航控制：車輛維持舒適速度，方向仍由你掌握。':'自動駕駛：放鬆一下，車輛會沿著公路自行前進。';$('hint').textContent=m==='auto'?'自動駕駛已啟動。看看窗外，旅程會繼續。':m==='cruise'?'巡航已啟動。你仍可隨時修正方向。':'方向盤交給你了，慢慢開。'}
+$('driveBtn').onclick=()=>setMode('drive');$('cruiseBtn').onclick=()=>setMode('cruise');$('autoBtn').onclick=()=>setMode('auto');
+function setRegion(r){region=r;night=r==='night';['coastBtn','mountainBtn','desertBtn','nightBtn'].forEach((id,i)=>$(id).classList.toggle('active',['coast','mountain','desert','night'][i]===r));$('region').textContent=({coast:'海岸公路 · 黃昏',mountain:'山林公路 · 清晨',desert:'曠野公路 · 午後',night:'夜間公路 · 靜謐'})[r];$('weather').textContent=({coast:'海風　☼　晴朗',mountain:'薄霧　☁　清涼',desert:'暖風　☼　乾燥',night:'微雨　☾　安靜'})[r]}
+$('coastBtn').onclick=()=>setRegion('coast');$('mountainBtn').onclick=()=>setRegion('mountain');$('desertBtn').onclick=()=>setRegion('desert');$('nightBtn').onclick=()=>setRegion('night');
+addEventListener('keydown',e=>{if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown',' '].includes(e.key))e.preventDefault();if(e.key==='ArrowLeft'||e.key.toLowerCase()==='a')steer=Math.max(-1,steer-.16);if(e.key==='ArrowRight'||e.key.toLowerCase()==='d')steer=Math.min(1,steer+.16);if(e.key==='ArrowUp'||e.key.toLowerCase()==='w')speed=Math.min(130,speed+3);if(e.key==='ArrowDown'||e.key.toLowerCase()==='s')speed=Math.max(0,speed-4);if(e.key===' '){setMode(mode==='auto'?'drive':'auto')}});addEventListener('keyup',e=>{if(['ArrowLeft','ArrowRight','a','d','A','D'].includes(e.key))steer*=.45});
+let audioCtx=null,master=null,playing=false,oscillators=[],song=0,interval=null;
+const songs=[{name:'01 — Blue Hour',notes:[261.63,329.63,392,493.88],wave:'sine'},{name:'02 — Soft Horizon',notes:[220,277.18,329.63,440],wave:'triangle'},{name:'03 — After the Rain',notes:[196,246.94,293.66,392],wave:'sine'}];
+function stopMusic(){if(interval){clearInterval(interval);interval=null}oscillators.forEach(o=>{try{o.stop()}catch(e){}});oscillators=[]}
+function startMusic(){if(!audioCtx)audioCtx=new (window.AudioContext||window.webkitAudioContext)();audioCtx.resume();if(!master){master=audioCtx.createGain();master.gain.value=+$('volume').value/100*.14;master.connect(audioCtx.destination)}
+ stopMusic();playing=true;$('musicBtn').textContent='Ⅱ 暫停';$('trackName').textContent=songs[song].name;
+ let beat=0;const playNote=()=>{if(!playing)return;const s=songs[song],freq=s.notes[beat%s.notes.length];let o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type=s.wave;o.frequency.value=freq;g.gain.setValueAtTime(.0001,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(.16,audioCtx.currentTime+.08);g.gain.exponentialRampToValueAtTime(.0001,audioCtx.currentTime+1.5);o.connect(g);g.connect(master);o.start();o.stop(audioCtx.currentTime+1.6);oscillators.push(o);if(oscillators.length>12)oscillators.shift();beat++};playNote();interval=setInterval(playNote,720)}
+function toggleMusic(){if(playing){playing=false;stopMusic();$('musicBtn').textContent='♫ 播放'}else startMusic()}
+$('musicBtn').onclick=toggleMusic;
+$('nextBtn').onclick=()=>{song=(song+1)%songs.length;if(playing)startMusic();else $('trackName').textContent=songs[song].name};
+$('prevBtn').onclick=()=>{song=(song+2)%songs.length;if(playing)startMusic();else $('trackName').textContent=songs[song].name};
+$('volume').oninput=()=>{let v=+$('volume').value;$('volLabel').textContent=v+'%';if(master)master.gain.value=v/100*.14};
+$('startBtn').onclick=()=>{$('start').style.display='none';started=true;setMode('drive');startMusic()};
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,8 @@
+{
+  "name": "遠方 Drift Away",
+  "description": "遠方 Drift Away — 公路旅行原型與安靜公路駕駛體驗",
+  "permissions": [],
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
